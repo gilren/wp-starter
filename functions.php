@@ -50,7 +50,7 @@ if ( ! function_exists( '_s_setup' ) ) :
 		// This theme uses wp_nav_menu() in one location.
 		register_nav_menus(
 			array(
-				'menu-1' => esc_html__( 'Primary', '_s' ),
+				'primary_navigation' => esc_html__( 'Primary', '_s' ),
 			)
 		);
 
@@ -140,26 +140,17 @@ add_action( 'widgets_init', '_s_widgets_init' );
  * Enqueue scripts and styles.
  */
 function _s_scripts() {
-	wp_enqueue_style( '_s-style', get_stylesheet_uri(), array(), _S_VERSION );
-	wp_style_add_data( '_s-style', 'rtl', 'replace' );
+  wp_enqueue_style( '_s-bootstrap', get_template_directory_uri() . '/assets/css/vendor/bootstrap.css' );
+  wp_enqueue_style( '_s-style', get_template_directory_uri() . '/assets/css/main.css' );
 
-	wp_enqueue_script( '_s-navigation', get_template_directory_uri() . '/js/navigation.js', array(), _S_VERSION, true );
+  wp_enqueue_script( '_s-jquery', get_template_directory_uri() . '/assets/js/vendor/jquery.min.js');  // version : 3.5.1
+  wp_enqueue_script( '_s-popper', get_template_directory_uri() . '/assets/js/vendor/popper.min.js');
+  wp_enqueue_script( '_s-bootstrap', get_template_directory_uri() . '/assets/js/vendor//bootstrap.min.js');
 
-	if ( is_singular() && comments_open() && get_option( 'thread_comments' ) ) {
-		wp_enqueue_script( 'comment-reply' );
-	}
+  wp_enqueue_script( '_s-script', get_template_directory_uri() . '/assets/js/main.js' );
 }
 add_action( 'wp_enqueue_scripts', '_s_scripts' );
 
-/**
- * Implement the Custom Header feature.
- */
-require get_template_directory() . '/inc/custom-header.php';
-
-/**
- * Custom template tags for this theme.
- */
-require get_template_directory() . '/inc/template-tags.php';
 
 /**
  * Functions which enhance the theme by hooking into WordPress.
@@ -172,15 +163,98 @@ require get_template_directory() . '/inc/template-functions.php';
 require get_template_directory() . '/inc/customizer.php';
 
 /**
- * Load Jetpack compatibility file.
+ * Custom post types.
  */
-if ( defined( 'JETPACK__VERSION' ) ) {
-	require get_template_directory() . '/inc/jetpack.php';
-}
+require get_template_directory() . '/inc/post-types.php';
+
+
+if ( ! function_exists( 'wp_body_open' ) ) :
+	/**
+	 * Shim for sites older than 5.2.
+	 *
+	 * @link https://core.trac.wordpress.org/ticket/12563
+	 */
+	function wp_body_open() {
+		do_action( 'wp_body_open' );
+	}
+endif;
+
 
 /**
- * Load WooCommerce compatibility file.
+ * Custom navwalker
  */
-if ( class_exists( 'WooCommerce' ) ) {
-	require get_template_directory() . '/inc/woocommerce.php';
+if ( ! file_exists( get_template_directory() . '/inc/class-wp-bootstrap-navwalker.php' ) ) {
+    // file does not exist... return an error.
+    return new WP_Error( 'class-wp-bootstrap-navwalker-missing', __( 'It appears the class-wp-bootstrap-navwalker.php file may be missing.', 'wp-bootstrap-navwalker' ) );
+} else {
+    // file exists... require it.
+    require_once get_template_directory() . '/inc/class-wp-bootstrap-navwalker.php';
 }
+
+
+/**
+ * Dynamically create pages/posts
+ */
+
+/*
+function create_page($title,$content,$parent_id = NULL )
+{
+    $objPage = get_page_by_title($title, 'OBJECT', 'page');
+    if( ! empty( $objPage ) )
+    {
+        echo "Page already exists:" . $title . "<br/>";
+        return $objPage->ID;
+    }
+
+    $page_id = wp_insert_post(
+            array(
+            'comment_status' => 'close',
+            'ping_status'    => 'close',
+            'post_author'    => 1,
+            'post_title'     => ucwords($title),
+            'post_name'      => strtolower(str_replace(' ', '-', trim($title))),
+            'post_status'    => 'publish',
+            'post_content'   => $content,
+            'post_type'      => 'page',
+            'post_parent'    =>  $parent_id //'id_of_the_parent_page_if_it_available'
+            )
+        );
+    echo "Created page_id=". $page_id." for page '".$title. "'<br/>";
+    return $page_id;
+}
+
+function create_post($title) {
+	$post_id = -1;
+	$author_id = 1;
+
+  $objPost = get_page_by_title($title, 'OBJECT', 'post');
+  if( ! empty( $objPost ) )
+  {
+      echo "post already exists:" . $title . "<br/>";
+      return $objPost->ID;
+  }
+
+  $post_id = wp_insert_post(
+    array(
+      'comment_status'	=>	'closed',
+      'ping_status'		=>	'closed',
+      'post_author'		=>	1,
+      'post_name'      => strtolower(str_replace(' ', '-', trim($title))),
+      'post_title'		=>	ucwords($title),
+      'post_status'		=>	'publish',
+      'post_type'		=>	'post'
+    )
+  );
+  echo "Created page_id=". $post_id." for page '".$title. "'<br/>";
+  return $post_id;
+}
+
+
+
+// usage
+// create_page( 'Informations financières', '');
+// create_post('Titre');
+
+
+
+*/
